@@ -11,13 +11,14 @@ from tinydb import TinyDB, Query
 from matplotlib import pyplot as plt
 
 
-p = argparse.ArgumentParser(description="Log and plot battery measurements of your notebook")
+p = argparse.ArgumentParser(description="Log and plot battery measurements of your notebook",
+                            formatter_class=argparse.RawTextHelpFormatter)
 p.add_argument("-l", "--log-only", action="store_true", dest="onlylog",
                help="only use logging function; do not plot")
 p.add_argument("-p", "--plot-only", action="store_true", dest="onlyplot",
                help="only use potting function without logging")
 p.add_argument("-i", "--interval", type=int, default=5,
-               help="specify logging interval in seconds")
+               help="specify logging interval in seconds (default: 5s)")
 p.add_argument("-b", "--battery", nargs="+", default=["BAT0"],
                help=("name[s] of the device[s] that should be locked.\n" +
                      "It must exist in /sys/class/power_supply/."))
