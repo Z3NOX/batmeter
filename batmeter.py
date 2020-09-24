@@ -55,11 +55,14 @@ def read_bat_state(bat_name):
     return uevent
 
 
-def log_bat_state(db, bat_list, end_cb=lambda _:False, timediff=5):
+def log_bat_state(db, bat_list, end_cb=lambda _:False,
+                  skip_cb=lambda _:False, timediff=5):
     """ reads battery state for each battery in `bat_list`.
         Store measurement to database `db` and waits for
         `timediff` seconds. End of log is determined with
         callback function `end_cb` which gets the uevent.
+        You can also define to skip storage of a measurement
+        by using the `skip_cb` function.
     """
     counter = 0
     print("Logging ... (interrupt with Ctrl+C)")
@@ -74,9 +77,10 @@ def log_bat_state(db, bat_list, end_cb=lambda _:False, timediff=5):
         try:
             for bat_name in bat_list:
                 uevent = read_bat_state(bat_name)
-                db.insert(uevent)
+                if not skip_cb(uevent):
+                    db.insert(uevent)
+                    counter += 1
             sleep(timediff)
-            counter += 1
             print("Last measurement: {}".format(datetime.now()), end='\r')
         except KeyboardInterrupt:
             break
@@ -117,6 +121,12 @@ def show_uevents_by_time(ax, uevent_list, c="b"):
     ax.plot(t, V, c=c, marker="x", ls="dotted", label="U(t)/V")
 
 
+def skip_power_zero(uevent):
+    """ usable as callback function to log_bat_state """
+    if uevent["POWER_NOW"] == "0":
+        return True
+    else:
+        return False
 
 def main():
 
@@ -128,7 +138,8 @@ def main():
     db = TinyDB(args.database, access_mode=access_mode)
 
     if not args.onlyplot:
-        log_bat_state(db, args.battery, timediff=args.interval)
+        log_bat_state(db, args.battery, timediff=args.interval,
+                      skip_cb=skip_power_zero)
 
     if args.onlylog:
         return
